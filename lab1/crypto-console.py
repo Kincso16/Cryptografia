@@ -11,7 +11,8 @@ import os.path
 
 from crypto import (encrypt_caesar, encrypt_caesar_binary_data, decrypt_caesar, decrypt_caesar_binary_data,
                     encrypt_vigenere, decrypt_vigenere,
-                    encrypt_scytale, decrypt_scytale,)
+                    encrypt_scytale, decrypt_scytale,
+                    encrypt_railfence, decrypt_railfence,)
 
 
 #############################
@@ -21,7 +22,7 @@ from crypto import (encrypt_caesar, encrypt_caesar_binary_data, decrypt_caesar, 
 def get_tool():
     print("* Tool *")
     return _get_selection(
-        "(C)aesar, (V)igenere, (S)cytale  ", "CVS"
+        "(C)aesar, (V)igenere, (S)cytale, (R)ailfence ", "CVSR"
     )
 
 def get_action():
@@ -120,6 +121,11 @@ def clean_scytale(text):
     return "".join(ch for ch in text.upper() if ch.isupper() or ch == ".")
 
 
+def clean_railfence(text):
+    """Convert text to a form compatible with the preconditions imposed by Railfence cipher"""
+    return text.upper()
+
+
 def run_caesar():
     """run Caesar cipher"""
     action = get_action()
@@ -187,6 +193,27 @@ def run_scytale():
     set_output(output)
         
         
+def run_railfence():
+    """run Railfence cipher"""
+    action = get_action()
+    encrypting = action == "E"
+
+    data = clean_railfence(get_input(binary=False))
+
+    print("* Transform *")
+    while True:
+        try:
+            number_of_rails = int(input("Rail? ").strip())
+            break
+        except ValueError:
+            print("This is not a number! Try again!")
+
+    output = (encrypt_railfence if encrypting else decrypt_railfence)(
+        data, number_of_rails
+    )
+    set_output(output)
+        
+        
 def run_suite():
     """
     Runs a single iteration of the cryptography suite.
@@ -202,6 +229,7 @@ def run_suite():
         "C": run_caesar,  # Caesar Cipher
         "V": run_vigenere,  # Vigenere Cipher
         "S": run_scytale,  # Scytale Cipher
+        "R": run_railfence,  # Railfence Cipher
     }
     commands[tool]()
 

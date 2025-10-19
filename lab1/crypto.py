@@ -145,26 +145,112 @@ def decrypt_vigenere(ciphertext, keyword):
 
 def encrypt_scytale(plaintext, circumference):
     """Encrypt plaintext using a Scytale cipher.
-    -feltoltom a szo veget pontokkal, hogy legyen a szo hossza oszthato a circumference-el,
-    s aztan csak ugralok circumference-nyi tavolsagokat a karakterlancban"""
 
+    Pads the plaintext with dots ('.') so its length is divisible by the circumference.
+    Then reads the characters by jumping every 'circumference' characters to form the ciphertext.
+    """
     if len(plaintext) % circumference != 0:
-        plaintext += "".join(
-            ["." for _ in range(
-                circumference - len(plaintext) % circumference)]
-        )
+        padding_length = circumference - len(plaintext) % circumference
+        plaintext += "." * padding_length
 
     return "".join([plaintext[i::circumference] for i in range(circumference)])
 
-def decrypt_scytale(ciphertext, circumference):
-    """Decrypt ciphertext using a Scytale cipher.
-    -ha a szo hossza nem oszthato a circumference-el akkor azt jelenti egyel tobb kell legyen a
-    circumference, amire viszont meghivom az enkriptalo algoritmust az uj circumference-el
-    (ha matrix formaban leirjuk az enkriptalast akkor a circumference a sort adja meg,
-    dekriptalasnal az oszlopszamra van szuksegunk)"""
 
+def decrypt_scytale(ciphertext, circumference):
+    """Decrypt ciphertext encrypted with a Scytale cipher.
+
+    Calculates the number of columns needed for the decryption (inverse of encryption).
+    Calls the encryption function with adjusted circumference to reconstruct the original text,
+    then removes any padding dots.
+    """
     new_circumference = len(ciphertext) // circumference
     if len(ciphertext) % circumference != 0:
         new_circumference += 1
 
     return encrypt_scytale(ciphertext, new_circumference).replace(".", "")
+
+
+# Railfence Cipher
+
+
+def get_item(i, num_rails, plaintext):
+    """Return a single row of the Railfence cipher for text.
+
+    Reads characters in a zig-zag pattern to extract the i-th row.
+    Handles alternating step sizes between diagonals.
+    """
+    if i == num_rails:
+        return plaintext[(num_rails - i):: ((i - 1) * 2)]
+
+    if i == 1:
+        return plaintext[(num_rails - i):: (num_rails - 1) * 2]
+
+    step1 = (i - 1) * 2
+    step2 = (num_rails - 1) * 2 - step1
+    step1_used = False
+    j = num_rails - i
+    plaintext_length = len(plaintext)
+    ciphertext = ""
+
+    while j < plaintext_length:
+        ciphertext += plaintext[j]
+        if step1_used:
+            j += step2
+            step1_used = False
+        else:
+            j += step1
+            step1_used = True
+
+    return ciphertext
+
+
+def encrypt_railfence(plaintext, num_rails):
+    """Encrypt plaintext using the Railfence cipher.
+
+    Concatenates all rows obtained via get_item in reverse order.
+    """
+    return "".join([get_item(i, num_rails, plaintext) for i in range(num_rails, 0, -1)])
+
+
+def decrypt_railfence(ciphertext, num_rails):
+    """Decrypt ciphertext encrypted with the Railfence cipher.
+
+    1. Create a matrix filled with placeholders to mark zig-zag positions.
+    2. Fill the placeholders with characters from the ciphertext row by row.
+    3. Read the matrix in zig-zag order to reconstruct the original plaintext.
+    """
+    # Initialize matrix with placeholders
+    matrix = [["." for _ in range(len(ciphertext))] for _ in range(num_rails)]
+    row = 0
+    down = True
+
+    # Mark zig-zag positions
+    for col in range(len(ciphertext)):
+        matrix[row][col] = "*"
+        if row == num_rails - 1:
+            down = False
+        elif row == 0:
+            down = True
+        row += 1 if down else -1
+
+    # Fill matrix row by row with ciphertext
+    k = 0
+    for row in range(num_rails):
+        for col in range(len(ciphertext)):
+            if matrix[row][col] == "*":
+                matrix[row][col] = ciphertext[k]
+                k += 1
+
+    # Read matrix in zig-zag to get plaintext
+    row = 0
+    down = True
+    plaintext = ""
+    for col in range(len(ciphertext)):
+        plaintext += matrix[row][col]
+        if row == num_rails - 1:
+            down = False
+        elif row == 0:
+            down = True
+        row += 1 if down else -1
+
+    return plaintext
