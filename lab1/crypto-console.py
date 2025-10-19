@@ -9,7 +9,8 @@ If you are a student, you shouldn't need to change anything in this file.
 """
 import os.path
 
-from crypto import (encrypt_caesar, encrypt_caesar_binary_data, decrypt_caesar, decrypt_caesar_binary_data,)
+from crypto import (encrypt_caesar, encrypt_caesar_binary_data, decrypt_caesar, decrypt_caesar_binary_data,
+                    encrypt_vigenere, decrypt_vigenere,)
 
 
 #############################
@@ -19,7 +20,7 @@ from crypto import (encrypt_caesar, encrypt_caesar_binary_data, decrypt_caesar, 
 def get_tool():
     print("* Tool *")
     return _get_selection(
-        "(C)aesar ", "C"
+        "(C)aesar, (V)igenere ", "CV"
     )
 
 def get_action():
@@ -67,9 +68,10 @@ def set_output(output, binary=False):
     print("* Output *")
     choice = _get_selection("(F)ile or (S)tring? ", "FS")
     if choice == 'S':
-        print(output)
         if binary:
             print(output.decode('latin-1'))
+        else:
+            print(output)
     else:
         filename = get_filename()
         flags = 'w'
@@ -108,6 +110,10 @@ def clean_caesar(text):
     return text.upper()
 
 
+def clean_vigenere(text):
+    return ''.join(ch for ch in text.upper() if ch.isupper())
+
+
 def run_caesar():
     """run Caesar cipher"""
     action = get_action()
@@ -135,6 +141,25 @@ def run_caesar():
         set_output(output)
 
 
+def run_vigenere():
+    """run Vigenere cipher"""
+    action = get_action()
+    encrypting = action == "E"
+    
+    data = clean_vigenere(get_input())
+
+    print("* Transform *")
+    print("Keyword? ")
+    
+    keyword = clean_vigenere(get_input())
+    
+    if encrypting:
+        output = encrypt_vigenere(data, keyword)
+    else:
+        output = decrypt_vigenere(data, keyword)
+    set_output(output)
+
+
 def run_suite():
     """
     Runs a single iteration of the cryptography suite.
@@ -148,6 +173,7 @@ def run_suite():
     # but I thought it was too cool to not sneak in here!
     commands = {
         "C": run_caesar,  # Caesar Cipher
+        "V": run_vigenere,  # Vigenere Cipher
     }
     commands[tool]()
 

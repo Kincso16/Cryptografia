@@ -82,3 +82,59 @@ def decrypt_caesar(ciphertext):
             plaintext += char
 
     return plaintext
+
+
+# Vigenere Cipher
+
+
+def repeat_word(word, length):
+    """Generate a key string by repeating the given word until it reaches the specified length."""
+    nr_of_repeats = length // len(word) + 1
+    repeated_word = word * nr_of_repeats
+    return repeated_word[0:length]
+
+
+def encrypt_vigenere(plaintext, keyword):
+    """Encrypt plaintext using the Vigenère cipher with an uppercase keyword.
+
+    Only letters in A-Z are shifted; other characters remain unchanged.
+    The keyword is repeated or truncated to match the length of the plaintext.
+    """
+    key = repeat_word(keyword, len(plaintext))
+    letter_to_number_dictionary = dict(zip(string.ascii_uppercase, range(26)))
+    number_to_letter_dictionary = dict(zip(range(26), string.ascii_uppercase))
+
+    ciphertext = ""
+    for i, char in enumerate(plaintext):
+        shifted_char_ord = (
+            letter_to_number_dictionary[char] +
+            letter_to_number_dictionary[key[i]]
+        )
+        if shifted_char_ord >= 26:
+            shifted_char_ord -= 26
+        ciphertext += number_to_letter_dictionary[shifted_char_ord]
+
+    return ciphertext
+
+
+def decrypt_vigenere(ciphertext, keyword):
+    """Decrypt ciphertext encrypted with the Vigenère cipher using an uppercase keyword.
+
+    Only letters in A-Z are shifted; other characters remain unchanged.
+    The keyword is repeated or truncated to match the length of the ciphertext.
+    """
+    key = repeat_word(keyword, len(ciphertext))
+    letter_to_number_dictionary = dict(zip(string.ascii_uppercase, range(26)))
+    number_to_letter_dictionary = dict(zip(range(26), string.ascii_uppercase))
+
+    plaintext = ""
+    for i, char in enumerate(ciphertext):
+        shifted_char_ord = (
+            letter_to_number_dictionary[char] -
+            letter_to_number_dictionary[key[i]]
+        )
+        if shifted_char_ord < 0:
+            shifted_char_ord += 26
+        plaintext += number_to_letter_dictionary.get(shifted_char_ord)
+
+    return plaintext
