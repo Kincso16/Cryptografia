@@ -10,7 +10,8 @@ If you are a student, you shouldn't need to change anything in this file.
 import os.path
 
 from crypto import (encrypt_caesar, encrypt_caesar_binary_data, decrypt_caesar, decrypt_caesar_binary_data,
-                    encrypt_vigenere, decrypt_vigenere,)
+                    encrypt_vigenere, decrypt_vigenere,
+                    encrypt_scytale, decrypt_scytale,)
 
 
 #############################
@@ -20,7 +21,7 @@ from crypto import (encrypt_caesar, encrypt_caesar_binary_data, decrypt_caesar, 
 def get_tool():
     print("* Tool *")
     return _get_selection(
-        "(C)aesar, (V)igenere ", "CV"
+        "(C)aesar, (V)igenere, (S)cytale  ", "CVS"
     )
 
 def get_action():
@@ -114,6 +115,11 @@ def clean_vigenere(text):
     return ''.join(ch for ch in text.upper() if ch.isupper())
 
 
+def clean_scytale(text):
+    """Convert text to a form compatible with the preconditions imposed by Scytale cipher"""
+    return "".join(ch for ch in text.upper() if ch.isupper() or ch == ".")
+
+
 def run_caesar():
     """run Caesar cipher"""
     action = get_action()
@@ -160,6 +166,27 @@ def run_vigenere():
     set_output(output)
 
 
+def run_scytale():
+    """run Scytale cipher"""
+    action = get_action()
+    encrypting = action == "E"
+
+    data = clean_scytale(get_input(binary=False))
+
+    print("* Transform *")
+    while True:
+        try:
+            circumference = int(input("Circumference? ").strip())
+            break
+        except ValueError:
+            print("This is not a number! Try again!")
+
+    
+    output = (encrypt_scytale if encrypting else decrypt_scytale)(
+        data, circumference)
+    set_output(output)
+        
+        
 def run_suite():
     """
     Runs a single iteration of the cryptography suite.
@@ -174,6 +201,7 @@ def run_suite():
     commands = {
         "C": run_caesar,  # Caesar Cipher
         "V": run_vigenere,  # Vigenere Cipher
+        "S": run_scytale,  # Scytale Cipher
     }
     commands[tool]()
 

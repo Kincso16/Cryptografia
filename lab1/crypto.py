@@ -138,3 +138,33 @@ def decrypt_vigenere(ciphertext, keyword):
         plaintext += number_to_letter_dictionary.get(shifted_char_ord)
 
     return plaintext
+
+
+# Scytale Cipher
+
+
+def encrypt_scytale(plaintext, circumference):
+    """Encrypt plaintext using a Scytale cipher.
+    -feltoltom a szo veget pontokkal, hogy legyen a szo hossza oszthato a circumference-el,
+    s aztan csak ugralok circumference-nyi tavolsagokat a karakterlancban"""
+
+    if len(plaintext) % circumference != 0:
+        plaintext += "".join(
+            ["." for _ in range(
+                circumference - len(plaintext) % circumference)]
+        )
+
+    return "".join([plaintext[i::circumference] for i in range(circumference)])
+
+def decrypt_scytale(ciphertext, circumference):
+    """Decrypt ciphertext using a Scytale cipher.
+    -ha a szo hossza nem oszthato a circumference-el akkor azt jelenti egyel tobb kell legyen a
+    circumference, amire viszont meghivom az enkriptalo algoritmust az uj circumference-el
+    (ha matrix formaban leirjuk az enkriptalast akkor a circumference a sort adja meg,
+    dekriptalasnal az oszlopszamra van szuksegunk)"""
+
+    new_circumference = len(ciphertext) // circumference
+    if len(ciphertext) % circumference != 0:
+        new_circumference += 1
+
+    return encrypt_scytale(ciphertext, new_circumference).replace(".", "")
