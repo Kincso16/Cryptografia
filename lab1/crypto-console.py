@@ -7,12 +7,9 @@ by the crypto module.
 
 If you are a student, you shouldn't need to change anything in this file.
 """
-import random
+import os.path
 
-from crypto import (encrypt_caesar, decrypt_caesar,
-                    encrypt_vigenere, decrypt_vigenere,
-                    generate_private_key, create_public_key,
-                    encrypt_mh, decrypt_mh)
+from crypto import (encrypt_caesar, encrypt_caesar_binary_data, decrypt_caesar, decrypt_caesar_binary_data,)
 
 
 #############################
@@ -21,8 +18,9 @@ from crypto import (encrypt_caesar, decrypt_caesar,
 
 def get_tool():
     print("* Tool *")
-    return _get_selection("(C)aesar, (V)igenere or (M)erkle-Hellman? ", "CVM")
-
+    return _get_selection(
+        "(C)aesar ", "C"
+    )
 
 def get_action():
     """Return true iff encrypt"""
@@ -31,9 +29,18 @@ def get_action():
 
 
 def get_filename():
-    filename = input("Filename? ")
+    filename = ""
+
     while not filename:
-        filename = input("Filename? ")
+        filename = input("Filename (path)? ")
+
+        if filename:
+            if os.path.isfile(filename):
+                break
+            else:
+                print("This is not an existing file! Try again!")
+                filename = ""
+
     return filename
 
 
@@ -61,6 +68,8 @@ def set_output(output, binary=False):
     choice = _get_selection("(F)ile or (S)tring? ", "FS")
     if choice == 'S':
         print(output)
+        if binary:
+            print(output.decode('latin-1'))
     else:
         filename = get_filename()
         flags = 'w'
@@ -99,66 +108,31 @@ def clean_caesar(text):
     return text.upper()
 
 
-def clean_vigenere(text):
-    return ''.join(ch for ch in text.upper() if ch.isupper())
-
-
 def run_caesar():
+    """run Caesar cipher"""
     action = get_action()
-    encrypting = action == 'E'
-    data = clean_caesar(get_input(binary=False))
+    encrypting = action == "E"
+    binary_data = _get_selection(
+        "Do you want to read binary data? (Y)es or (N)o ", "YN"
+    )
 
-    print("* Transform *")
-    print("{}crypting {} using Caesar cipher...".format('En' if encrypting else 'De', data))
-
-    output = (encrypt_caesar if encrypting else decrypt_caesar)(data)
-
-    set_output(output)
-
-
-def run_vigenere():
-    action = get_action()
-    encrypting = action == 'E'
-    data = clean_vigenere(get_input(binary=False))
-
-    print("* Transform *")
-    keyword = clean_vigenere(input("Keyword? "))
-
-    print("{}crypting {} using Vigenere cipher and keyword {}...".format('En' if encrypting else 'De', data, keyword))
-
-    output = (encrypt_vigenere if encrypting else decrypt_vigenere)(data, keyword)
-
-    set_output(output)
-
-
-def run_merkle_hellman():
-    action = get_action()
-
-    print("* Seed *")
-    seed = input("Set Seed [enter for random]: ")
-    import random
-    if not seed:
-        random.seed()
-    else:
-        random.seed(seed)
-
-    print("* Building private key...")
-
-    private_key = generate_private_key()
-    public_key = create_public_key(private_key)
-
-    if action == 'E':  # Encrypt
+    if binary_data == "Y":
         data = get_input(binary=True)
-        print("* Transform *")
-        chunks = encrypt_mh(data, public_key)
-        output = ' '.join(map(str, chunks))
-    else:  # Decrypt
-        data = get_input(binary=False)
-        chunks = [int(line.strip()) for line in data.split() if line.strip()]
-        print("* Transform *")
-        output = decrypt_mh(chunks, private_key)
+    else:
+        data = clean_caesar(get_input(binary=False))
 
-    set_output(output)
+    print("* Transform *")
+
+    if binary_data == "Y":
+        if encrypting:
+            output = encrypt_caesar_binary_data(data)
+            set_output(output, binary=True)
+        else:
+            output = decrypt_caesar_binary_data(data)  
+            set_output(output, binary=True)
+    else:
+        output = (encrypt_caesar if encrypting else decrypt_caesar)(data)
+        set_output(output)
 
 
 def run_suite():
@@ -168,14 +142,12 @@ def run_suite():
     Asks the user for input text from a string or file, whether to encrypt
     or decrypt, what tool to use, and where to show the output.
     """
-    print('-' * 34)
+    print("-" * 34)
     tool = get_tool()
     # This isn't the cleanest way to implement functional control flow,
     # but I thought it was too cool to not sneak in here!
     commands = {
-        'C': run_caesar,         # Caesar Cipher
-        'V': run_vigenere,       # Vigenere Cipher
-        'M': run_merkle_hellman  # Merkle-Hellman Knapsack Cryptosystem
+        "C": run_caesar,  # Caesar Cipher
     }
     commands[tool]()
 
