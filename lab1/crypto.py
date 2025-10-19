@@ -140,6 +140,24 @@ def decrypt_vigenere(ciphertext, keyword):
     return plaintext
 
 
+def repeat_key_bytes(key: bytes, length: int) -> bytes:
+    """Repeat a key (bytes) to match the desired length."""
+    repeats = length // len(key) + 1
+    return (key * repeats)[:length]
+
+
+def decrypt_vigenere_bytes(data, key):
+    """Decrypt binary data encrypted with Vigenere cipher modulo 256."""
+    key = repeat_key_bytes(key, len(data))
+    return bytes((b - k) % 256 for b, k in zip(data, key))
+
+
+def encrypt_vigenere_bytes(data, key):
+    """Encrypt binary data using Vigenere cipher with full 0–255 byte range."""
+    key = repeat_key_bytes(key, len(data))
+    return bytes((b + k) % 256 for b, k in zip(data, key))
+
+
 # Scytale Cipher
 
 

@@ -8,9 +8,10 @@ by the crypto module.
 If you are a student, you shouldn't need to change anything in this file.
 """
 import os.path
+import base64
 
-from crypto import (encrypt_caesar, encrypt_caesar_binary_data, decrypt_caesar, decrypt_caesar_binary_data,
-                    encrypt_vigenere, decrypt_vigenere,
+from crypto import (encrypt_caesar, decrypt_caesar, encrypt_caesar_binary_data, decrypt_caesar_binary_data,
+                    encrypt_vigenere, decrypt_vigenere, encrypt_vigenere_binary_data,encrypt_vigenere_bytes,decrypt_vigenere_bytes,
                     encrypt_scytale, decrypt_scytale,
                     encrypt_railfence, decrypt_railfence,)
 
@@ -157,19 +158,34 @@ def run_vigenere():
     """run Vigenere cipher"""
     action = get_action()
     encrypting = action == "E"
-    
-    data = clean_vigenere(get_input())
+    binary_data = _get_selection(
+        "Do you want to read binary data? (Y)es or (N)o ", "YN"
+    )
+
+    if binary_data == "Y":
+        data = get_input(binary=True)
+    else:
+        data = clean_vigenere(get_input())
 
     print("* Transform *")
     print("Keyword? ")
-    
-    keyword = clean_vigenere(get_input())
-    
-    if encrypting:
-        output = encrypt_vigenere(data, keyword)
+    if binary_data == "Y":
+        keyword = get_input(binary=True)
     else:
-        output = decrypt_vigenere(data, keyword)
-    set_output(output)
+        keyword = clean_vigenere(get_input())
+
+    if binary_data == "Y":
+        if encrypting:
+            output = output = encrypt_vigenere_bytes(data, keyword)
+            set_output(output, binary=True)
+            print(output)
+        else:
+            output = output = decrypt_vigenere_bytes(data, keyword) 
+            set_output(output, binary=True)
+            print(output)
+    else:
+        output = (encrypt_vigenere if encrypting else decrypt_vigenere)(data, keyword)
+        set_output(output)
 
 
 def run_scytale():
