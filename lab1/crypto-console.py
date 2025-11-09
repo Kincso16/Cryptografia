@@ -11,7 +11,7 @@ import os.path
 import base64
 
 from crypto import (encrypt_caesar, decrypt_caesar, encrypt_caesar_binary_data, decrypt_caesar_binary_data,
-                    encrypt_vigenere, decrypt_vigenere, encrypt_vigenere_binary_data,encrypt_vigenere_bytes,decrypt_vigenere_bytes,
+                    encrypt_vigenere, decrypt_vigenere, encrypt_vigenere_bytes, decrypt_vigenere_bytes,
                     encrypt_scytale, decrypt_scytale,
                     encrypt_railfence, decrypt_railfence,)
 

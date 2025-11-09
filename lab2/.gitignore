@@ -1,0 +1,7 @@
+tests_output/
+__pycache__/
+
+/decrypted.bin
+/encrypted.bin
+/input.bin
+/sample_config.json
