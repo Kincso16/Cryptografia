@@ -5,56 +5,67 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format='[KeyServer] %(message)s')
 
-REGISTRY = {}   # client_id -> PEM public key (string)
+REGISTRY = {}  # client_id (str) -> pem string
 
 class KeyServerHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        data = b""
+        data = b''
         while True:
             chunk = self.request.recv(4096)
             if not chunk:
                 break
             data += chunk
-            if b"\n" in chunk:
+            if b'\n' in chunk:
                 break
-
         try:
-            msg = json.loads(data.decode().strip())
+            msg = json.loads(data.decode('utf-8').strip())
         except Exception as e:
-            logging.error(f"Invalid JSON: {e}")
+            logging.error("Bad request: %s", e)
+            self.request.sendall(json.dumps({"status":"error","why":"bad json"}).encode('utf-8') + b'\n')
             return
 
-        cmd = msg.get("cmd")
-        client_id = str(msg.get("client_id"))
+        cmd = msg.get('cmd')
+        if cmd == 'register':
+            cid = msg.get('client_id')
+            pem = msg.get('pubkey_pem')
+            if not pem:
+                logging.info("Register missing pubkey for %s", cid)
+                self.request.sendall(json.dumps({"status":"error","why":"missing pubkey"}).encode('utf-8') + b'\n')
+                return
+            REGISTRY[str(cid)] = pem
+            logging.info("Registered client %s (pubkey len %d)", cid, len(pem))
+            self.request.sendall(json.dumps({"status":"ok"}).encode('utf-8') + b'\n')
+            return
 
-        if cmd == "register":
-            pem = msg["pubkey_pem"]
-            REGISTRY[client_id] = pem
-            logging.info(f"Registered client {client_id}")
-            self.request.sendall(b'{"status":"ok"}\n')
-
-        elif cmd == "get":
-            pem = REGISTRY.get(client_id)
+        elif cmd == 'get':
+            cid = msg.get('client_id')
+            pem = REGISTRY.get(str(cid))
             if pem:
-                logging.info(f"Lookup {client_id}: FOUND")
-                resp = {"status": "ok", "pubkey_pem": pem}
+                logging.info("Public key lookup for %s -> found", cid)
+                self.request.sendall(json.dumps({"status":"ok","pubkey_pem": pem}).encode('utf-8') + b'\n')
             else:
-                logging.info(f"Lookup {client_id}: NOT FOUND")
-                resp = {"status": "notfound"}
-            self.request.sendall((json.dumps(resp) + "\n").encode())
+                logging.info("Public key lookup for %s -> NOT FOUND", cid)
+                self.request.sendall(json.dumps({"status":"notfound"}).encode('utf-8') + b'\n')
+            return
 
         else:
-            self.request.sendall(b'{"status":"error","why":"unknown cmd"}\n')
+            logging.info("Unknown cmd %s", cmd)
+            self.request.sendall(json.dumps({"status":"error","why":"unknown cmd"}).encode('utf-8') + b'\n')
+            return
 
-class ThreadedServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument('--host', default='localhost')
+    parser.add_argument('--port', type=int, default=8000)
     args = parser.parse_args()
-
-    server = ThreadedServer(("localhost", args.port), KeyServerHandler)
-    logging.info(f"KeyServer listening on port {args.port}")
-    server.serve_forever()
+    server = ThreadedTCPServer((args.host,args.port), KeyServerHandler)
+    logging.info("KeyServer listening on %s:%d", args.host, args.port)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        logging.info("Shutting down")
+        server.shutdown()
